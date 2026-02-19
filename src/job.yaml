@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: api-benchmark-job
+spec:
+  parallelism: 5
+  template:
+    spec:
+      containers:
+      - name: benchmark
+        image: api-benchmark:latest
+        imagePullPolicy: Never
+        # Override the arguments to run a bigger test
+        args: ["-url", "https://httpbin.org/get", "-requests", "50"]
+      restartPolicy: Never
+  backoffLimit: 1
