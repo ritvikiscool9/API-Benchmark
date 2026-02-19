@@ -1,0 +1,17 @@
+syntax = "proto3"; 
+
+import "google/protobuf/empty.proto"; 
+
+package benchmark;
+
+option go_package = "./pb";
+
+message Result{
+    int64 time = 1;
+    int64 latency = 2;
+    int32 status = 3;
+}
+
+service Aggregator{
+    rpc SubmitResults(Result) returns (google.protobuf.Empty);
+}
