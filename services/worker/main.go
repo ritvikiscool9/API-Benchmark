@@ -15,6 +15,7 @@ type RequestResult struct{
 }
 
 func main() {
+	// Flags to take in user input for target URL and amount of requests 
 	urlPtr := flag.String("url", "https://httpbin.org/get", "URL to test")
 	totalRequestsPtr := flag.Int("requests", 10, "number of requests to make")
 
