@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	// "context"
 	"APIbenchmark/proto/pb"
 
 	"google.golang.org/grpc"
@@ -48,7 +48,6 @@ func main() {
 			startTime := time.Now()
 			
 			resp, err := http.Get(*urlPtr)
-
 			
 			if err != nil {
 				fmt.Printf("Error: %s\n", err)
@@ -57,6 +56,15 @@ func main() {
 			defer resp.Body.Close()
 
 			duration := time.Since(startTime)
+			latencyMs :=duration.Milliseconds()
+
+			res := &pb.Result{
+				Time: startTime.Unix(),
+				Latency: latencyMs,
+				Status: int32(resp.StatusCode),
+			}
+
+			client.SubmitResults(context.Background(), res)
 
 		}()
 	}
