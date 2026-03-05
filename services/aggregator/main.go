@@ -30,7 +30,7 @@ func(s *server) SubmitResults(ctx context.Context, req *pb.Result) (empty *empty
 	s.latency += req.GetLatency()
 
 	// Log responses
-	fmt.Printf("Received result, total requests so far: %d. Latency: %d", s.totalRequests, s.latency)
+	fmt.Printf("Received result, total requests so far: %d. Latency: %d\n", s.totalRequests, s.latency)
 
 	return &emptypb.Empty{}, nil
 }
