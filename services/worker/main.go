@@ -36,17 +36,23 @@ func main() {
 	}
 	defer conn.Close()
 
+	// Create the gRPC client used to submit benchmark results
 	client := pb.NewAggregatorClient(conn)
 
+	// WaitGroup keeps track of all request goroutines
 	var wg sync.WaitGroup
 
 	for i := 0; i < *totalRequestsPtr; i++ {
+		// Register one pending goroutine so Wait can block until all requests finish
 		wg.Add(1)
 
 		go func() {
+			// Ensure this goroutine always signals completion, even on early return
 			defer wg.Done()
+			// Record when this request starts so we can calculate end-to-end latency
 			startTime := time.Now()
 			
+			// Send the HTTP request to the target URL
 			resp, err := http.Get(*urlPtr)
 			
 			if err != nil {
@@ -55,15 +61,18 @@ func main() {
 			}
 			defer resp.Body.Close()
 
+			// Convert request duration to milliseconds for reporting
 			duration := time.Since(startTime)
-			latencyMs :=duration.Milliseconds()
+			latencyMs := duration.Milliseconds()
 
+			// Package this request's metrics to send to the aggregator service
 			res := &pb.Result{
 				Time: startTime.Unix(),
 				Latency: latencyMs,
 				Status: int32(resp.StatusCode),
 			}
 
+			// Submit the result over gRPC.
 			client.SubmitResults(context.Background(), res)
 
 		}()
