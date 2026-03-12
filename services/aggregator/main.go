@@ -29,8 +29,11 @@ func(s *server) SubmitResults(ctx context.Context, req *pb.Result) (empty *empty
 	s.totalRequests += 1
 	s.latency += req.GetLatency()
 
+	// Calculate average latency
+	currentAverage := s.latency/int64(s.totalRequests)
+
 	// Log responses
-	fmt.Printf("Received result, total requests so far: %d. Latency: %d\n", s.totalRequests, s.latency)
+	fmt.Printf("Received result, total requests so far: %d. Current Average Latency: %d\n", s.totalRequests, currentAverage)
 
 	return &emptypb.Empty{}, nil
 }
