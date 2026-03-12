@@ -18,6 +18,7 @@ type server struct{
 	mutex sync.Mutex
 	totalRequests int
 	latency int64
+	succesfulRequests int
 }
 
 func(s *server) SubmitResults(ctx context.Context, req *pb.Result) (empty *emptypb.Empty, err error){
@@ -29,11 +30,18 @@ func(s *server) SubmitResults(ctx context.Context, req *pb.Result) (empty *empty
 	s.totalRequests += 1
 	s.latency += req.GetLatency()
 
+	// Check if the request was succesful
+	if(req.GetStatus() == 200){
+		// Increase succesful requests counter
+		s.succesfulRequests += 1
+	}
+
+
 	// Calculate average latency
 	currentAverage := s.latency/int64(s.totalRequests)
 
 	// Log responses
-	fmt.Printf("Received result, total requests so far: %d. Current Average Latency: %d\n", s.totalRequests, currentAverage)
+	fmt.Printf("Received result, total requests: %d. Succesful requests: %d. Current Average Latency: %d\n", s.totalRequests, s.succesfulRequests, currentAverage)
 
 	return &emptypb.Empty{}, nil
 }
