@@ -19,6 +19,7 @@ func main() {
 	// Flags to take in user input for target URL and amount of requests 
 	urlPtr := flag.String("url", "https://httpbin.org/get", "URL to test")
 	totalRequestsPtr := flag.Int("requests", 10, "number of requests to make")
+	aggregator := flag.String("aggregator","locahost:50051", "target server address")
 
 	flag.Parse()
 
@@ -30,7 +31,7 @@ func main() {
 	fmt.Printf("Starting benchmark on %s with %d requests...\n", *urlPtr, *totalRequestsPtr)
 
 	// Create grpc server
-	conn, err := grpc.NewClient("localhost:50051",grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(*aggregator,grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Server creation failed")
 	}

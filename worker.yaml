@@ -1,0 +1,16 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: worker-job 
+spec: 
+  template: 
+    spec: 
+      containers: 
+        - name: worker 
+          image: worker-service:latest 
+          imagePullPolicy: Never
+          args: 
+            - "-requests=50"
+            - "-url=https://httpbin.org/get"
+            - "-aggregator=aggregator-service:50051"
+      restartPolicy: Never
