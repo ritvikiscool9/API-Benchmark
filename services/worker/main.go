@@ -74,7 +74,14 @@ func main() {
 			}
 
 			// Submit the result over gRPC.
-			client.SubmitResults(context.Background(), res)
+			_, err = client.SubmitResults(context.Background(), res)
+			if err != nil {
+				// log.Fatalf will print the error AND force the container to crash 
+				log.Fatalf("CRITICAL: Failed to send results to Aggregator: %v", err)
+			}
+
+			// If we make it past the error check, it means the network drop was successful!
+			log.Println("SUCCESS: Payload delivered to the Aggregator")
 
 		}()
 	}

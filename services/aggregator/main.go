@@ -36,7 +36,6 @@ func(s *server) SubmitResults(ctx context.Context, req *pb.Result) (empty *empty
 		s.succesfulRequests += 1
 	}
 
-
 	// Calculate average latency
 	currentAverage := s.latency/int64(s.totalRequests)
 
