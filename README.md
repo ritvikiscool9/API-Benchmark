@@ -7,7 +7,7 @@ A containerized load testing tool written in Go, orchestrated with Kubernetes. I
 ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![gRPC](https://img.shields.io/badge/gRPC-%23244c5a.svg?style=for-the-badge&logo=grpc&logoColor=white)
 
-## 🚀 Current Capabilities
+## Current Capabilities
 
 Currently, the application acts as the foundational infrastructure for a distributed testing system. 
 
@@ -15,21 +15,21 @@ Currently, the application acts as the foundational infrastructure for a distrib
 * **gRPC Telemetry:** Transmits test results (total requests, success rates, latency) across the Kubernetes network using a custom Protobuf contract.
 * **Centralized Aggregation:** A dedicated server listens for incoming payloads from worker nodes and calculates the average latency of the benchmark run.
 
-## 🏗 Architecture
+## Architecture
 
 The system is currently composed of two main microservices:
 
 1. **The Worker Node Service (The Muscle):** A lightweight Go container deployed as a Kubernetes `Job`. It wakes up, executes a batch of HTTP requests against a target URL, and sends the performance payload to the Aggregator over gRPC before shutting down.
 2. **The Aggregator Service:** A Go server deployed as a Kubernetes `Deployment`. It runs continuously, listening on port 50051 for incoming gRPC connections from Worker pods. It receives the batched data streams, calculates the current average latency, and logs the metrics to standard output.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Language:** Go (Golang)
 * **Communication:** gRPC / Protocol Buffers
 * **Containerization:** Docker (Multi-stage builds)
 * **Orchestration:** Kubernetes (Deployments, Services, Jobs)
 
-## ⚡ Quick Start (Local Kubernetes Cluster)
+## Quick Start (Local Kubernetes Cluster)
 
 Prerequisites:
 * Docker Desktop (with Kubernetes enabled)
