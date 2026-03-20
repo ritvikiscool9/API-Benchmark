@@ -1,56 +1,72 @@
-# API Benchmark
+# Distributed Load Tester & API Benchmarker
 
-**API Benchmark** is a high-performance, distributed load testing tool written in Go. It is designed to simulate massive concurrent traffic against API endpoints, measure latency with microsecond precision, and aggregate real-time performance metrics.
+A containerized load testing tool written in Go, orchestrated with Kubernetes. It is designed to measure API latency and aggregate results across a distributed network using gRPC.
 
 ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![gRPC](https://img.shields.io/badge/gRPC-%23244c5a.svg?style=for-the-badge&logo=grpc&logoColor=white)
 
-## 🚀 Project Overview
+## 🚀 Current Capabilities
 
-The goal of this project is to build a scalable alternative to tools like JMeter or verify system reliability under stress. Unlike simple scripts, **API Benchmark** is architected as a distributed microservice system capable of coordinated attacks from multiple geographic regions using Kubernetes.
+Currently, the application acts as the foundational infrastructure for a distributed testing system. 
 
-### Core Features (In Development)
-* **High-Concurrency Load Generation:** Utilizes Go goroutines to spawn thousands of lightweight "virtual users" per node with minimal memory overhead.
-* **Distributed Architecture:** Designed to run on AWS EKS (Elastic Kubernetes Service), scaling worker nodes horizontally to generate massive throughput.
-* **Real-Time Metrics:** Aggregates latency distributions (P50, P95, P99), error rates, and throughput (RPS) in real-time.
-* **Non-Blocking Data Pipeline:** Uses Go channels and buffered queues to process metric streams without locking or bottlenecking the load generator.
+* **Containerized Load Generation:** Executes batches of HTTP requests against a target API from an isolated Alpine Linux environment.
+* **gRPC Telemetry:** Transmits test results (total requests, success rates, latency) across the Kubernetes network using a custom Protobuf contract.
+* **Centralized Aggregation:** A dedicated server listens for incoming payloads from worker nodes and calculates the average latency of the benchmark run.
 
 ## 🏗 Architecture
 
-The system is composed of three main microservices:
+The system is currently composed of two main microservices:
 
-1.  **The Controller (Brain):** A REST API that accepts test configurations (Target URL, QPS, Duration) and orchestrates the worker nodes via gRPC.
-2.  **The Worker (Muscle):** A highly optimized Go service that generates the actual HTTP traffic. It uses a worker pool pattern to manage concurrency and reports results back asynchronously.
-3.  **The Aggregator (Historian):** Ingests the stream of results from all workers, calculates windowed statistics, and persists historical data to a time-series database.
+1. **The Worker Node Service (The Muscle):** A lightweight Go container deployed as a Kubernetes `Job`. It wakes up, executes a batch of HTTP requests against a target URL, and sends the performance payload to the Aggregator over gRPC before shutting down.
+2. **The Aggregator Service:** A Go server deployed as a Kubernetes `Deployment`. It runs continuously, listening on port 50051 for incoming gRPC connections from Worker pods. It receives the batched data streams, calculates the current average latency, and logs the metrics to standard output.
 
 ## 🛠️ Tech Stack
 
-* **Language:** Go (Golang) for its superior concurrency model and raw performance.
-* **Containerization:** Docker (Multi-stage builds for minimal image size).
-* **Orchestration:** Kubernetes (AWS EKS) for auto-scaling worker nodes.
-* **Communication:** gRPC for internal service-to-service communication.
-* **Database:** PostgreSQL (for test configurations) and TimescaleDB (for metric storage).
+* **Language:** Go (Golang)
+* **Communication:** gRPC / Protocol Buffers
+* **Containerization:** Docker (Multi-stage builds)
+* **Orchestration:** Kubernetes (Deployments, Services, Jobs)
 
-## ⚡ Quick Start (Local Dev)
+## ⚡ Quick Start (Local Kubernetes Cluster)
 
 Prerequisites:
-* Go 1.22+
-* Docker
+* Docker Desktop (with Kubernetes enabled)
+* `kubectl` CLI configured
 
-### Running a Local Benchmark
-Currently, the core engine can be run locally to test basic concurrency.
+### 1. Start the Aggregator (The Brain)
+Deploy the central server that will listen for incoming metrics:
+```bash
+kubectl apply -f aggregator.yaml
+```
+Verify the Aggregator is running and its network service is active:
+```bash
+kubectl logs deployment/aggregator-deployment
+```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/ritvikiscool9/api-benchmark.git](https://github.com/ritvikiscool9/api-benchmark.git)
-    cd api-benchmark
-    ```
+### 2. Build the Worker (The Muscle)
+Compile the Go load-testing engine into an Alpine Linux Docker container:
+```bash
+docker build -t worker-service -f services/worker/Dockerfile.worker .
+```
 
-2.  **Run the load generator:**
-    ```bash
-    go run main.go
-    ```
-    *By default, this targets `https://httpbin.org/get` with 50 concurrent requests.*
+### 3. Launch the Load Test
+Deploy the Kubernetes Job to spin up the Worker pod, execute the requests, and transmit the payload:
+```bash
+# Ensure any previous completed jobs are cleared
+kubectl delete job worker-job --ignore-not-found=true
 
+# Deploy the new benchmark job
+kubectl apply -f worker.yaml
+```
+
+### 4. View the Results
+Check the Worker logs to verify the HTTP requests were successfully executed:
+```bash
+kubectl logs job/worker-job
+```
+Check the Aggregator's logs to see the incoming gRPC payloads and latency averages:
+```bash
+kubectl logs deployment/aggregator-deployment
+```
