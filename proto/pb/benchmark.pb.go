@@ -82,6 +82,50 @@ func (x *Result) GetStatus() int32 {
 	return 0
 }
 
+type BatchPayload struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Results       []*Result              `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BatchPayload) Reset() {
+	*x = BatchPayload{}
+	mi := &file_proto_benchmark_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BatchPayload) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BatchPayload) ProtoMessage() {}
+
+func (x *BatchPayload) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_benchmark_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BatchPayload.ProtoReflect.Descriptor instead.
+func (*BatchPayload) Descriptor() ([]byte, []int) {
+	return file_proto_benchmark_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *BatchPayload) GetResults() []*Result {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
+
 var File_proto_benchmark_proto protoreflect.FileDescriptor
 
 const file_proto_benchmark_proto_rawDesc = "" +
@@ -90,10 +134,12 @@ const file_proto_benchmark_proto_rawDesc = "" +
 	"\x06Result\x12\x12\n" +
 	"\x04time\x18\x01 \x01(\x03R\x04time\x12\x18\n" +
 	"\alatency\x18\x02 \x01(\x03R\alatency\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\x05R\x06status2H\n" +
+	"\x06status\x18\x03 \x01(\x05R\x06status\";\n" +
+	"\fBatchPayload\x12+\n" +
+	"\aresults\x18\x01 \x03(\v2\x11.benchmark.ResultR\aresults2N\n" +
 	"\n" +
-	"Aggregator\x12:\n" +
-	"\rSubmitResults\x12\x11.benchmark.Result\x1a\x16.google.protobuf.EmptyB\x06Z\x04./pbb\x06proto3"
+	"Aggregator\x12@\n" +
+	"\rSubmitResults\x12\x17.benchmark.BatchPayload\x1a\x16.google.protobuf.EmptyB\x06Z\x04./pbb\x06proto3"
 
 var (
 	file_proto_benchmark_proto_rawDescOnce sync.Once
@@ -107,19 +153,21 @@ func file_proto_benchmark_proto_rawDescGZIP() []byte {
 	return file_proto_benchmark_proto_rawDescData
 }
 
-var file_proto_benchmark_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_proto_benchmark_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_proto_benchmark_proto_goTypes = []any{
 	(*Result)(nil),        // 0: benchmark.Result
-	(*emptypb.Empty)(nil), // 1: google.protobuf.Empty
+	(*BatchPayload)(nil),  // 1: benchmark.BatchPayload
+	(*emptypb.Empty)(nil), // 2: google.protobuf.Empty
 }
 var file_proto_benchmark_proto_depIdxs = []int32{
-	0, // 0: benchmark.Aggregator.SubmitResults:input_type -> benchmark.Result
-	1, // 1: benchmark.Aggregator.SubmitResults:output_type -> google.protobuf.Empty
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: benchmark.BatchPayload.results:type_name -> benchmark.Result
+	1, // 1: benchmark.Aggregator.SubmitResults:input_type -> benchmark.BatchPayload
+	2, // 2: benchmark.Aggregator.SubmitResults:output_type -> google.protobuf.Empty
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_proto_benchmark_proto_init() }
@@ -133,7 +181,7 @@ func file_proto_benchmark_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_benchmark_proto_rawDesc), len(file_proto_benchmark_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

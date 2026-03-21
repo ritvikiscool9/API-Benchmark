@@ -8,7 +8,6 @@ package pb
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -28,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AggregatorClient interface {
-	SubmitResults(ctx context.Context, in *Result, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SubmitResults(ctx context.Context, in *BatchPayload, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type aggregatorClient struct {
@@ -39,7 +38,7 @@ func NewAggregatorClient(cc grpc.ClientConnInterface) AggregatorClient {
 	return &aggregatorClient{cc}
 }
 
-func (c *aggregatorClient) SubmitResults(ctx context.Context, in *Result, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *aggregatorClient) SubmitResults(ctx context.Context, in *BatchPayload, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Aggregator_SubmitResults_FullMethodName, in, out, cOpts...)
@@ -53,7 +52,7 @@ func (c *aggregatorClient) SubmitResults(ctx context.Context, in *Result, opts .
 // All implementations must embed UnimplementedAggregatorServer
 // for forward compatibility.
 type AggregatorServer interface {
-	SubmitResults(context.Context, *Result) (*emptypb.Empty, error)
+	SubmitResults(context.Context, *BatchPayload) (*emptypb.Empty, error)
 	mustEmbedUnimplementedAggregatorServer()
 }
 
@@ -64,7 +63,7 @@ type AggregatorServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAggregatorServer struct{}
 
-func (UnimplementedAggregatorServer) SubmitResults(context.Context, *Result) (*emptypb.Empty, error) {
+func (UnimplementedAggregatorServer) SubmitResults(context.Context, *BatchPayload) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method SubmitResults not implemented")
 }
 func (UnimplementedAggregatorServer) mustEmbedUnimplementedAggregatorServer() {}
@@ -89,7 +88,7 @@ func RegisterAggregatorServer(s grpc.ServiceRegistrar, srv AggregatorServer) {
 }
 
 func _Aggregator_SubmitResults_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Result)
+	in := new(BatchPayload)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -101,7 +100,7 @@ func _Aggregator_SubmitResults_Handler(srv interface{}, ctx context.Context, dec
 		FullMethod: Aggregator_SubmitResults_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AggregatorServer).SubmitResults(ctx, req.(*Result))
+		return srv.(AggregatorServer).SubmitResults(ctx, req.(*BatchPayload))
 	}
 	return interceptor(ctx, in, info, handler)
 }

@@ -43,6 +43,30 @@ func main() {
 	// WaitGroup keeps track of all request goroutines
 	var wg sync.WaitGroup
 
+	// Channel for all goroutines to send their HTTP results
+	resultsChan := make(chan *pb.Result, *totalRequestsPtr)
+
+	// Channel that tells main when it is finished
+	collectorDone := make(chan bool)
+
+	go func(){
+		batch := make([]*pb.Result, 0, *totalRequestsPtr)
+		
+		// Loop that blocks and catches data until resultsChan is closed
+		for res := range resultsChan{
+			batch = append(batch, res)
+		}
+	
+		_, err := client.SubmitResults(context.Background(), &pb.BatchPayload{Results: batch})
+		if err != nil {
+			log.Fatalf("CRITICAL: Failed to send batch to Aggregator: %v", err)
+		}
+		log.Println("SUCCESS: Batch payload delivered to the Aggregator")
+
+		// Signal to main that the gRPC transmission is officially complete
+    	collectorDone <- true
+	}()
+
 	for i := 0; i < *totalRequestsPtr; i++ {
 		// Register one pending goroutine so Wait can block until all requests finish
 		wg.Add(1)
