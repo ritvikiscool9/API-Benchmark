@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"slices"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -19,6 +20,7 @@ type server struct{
 	totalRequests int
 	latency int64
 	succesfulRequests int
+	latencies []int64
 }
 
 func(s *server) SubmitResults(ctx context.Context, req *pb.BatchPayload) (empty *emptypb.Empty, err error){
@@ -31,6 +33,7 @@ func(s *server) SubmitResults(ctx context.Context, req *pb.BatchPayload) (empty 
 		// Increment the request counter
 		s.totalRequests += 1
 		s.latency += res.GetLatency()
+		s.latencies = append(s.latencies, res.GetLatency())
 
 		// Check if the request was succesful
 		if(res.GetStatus() == 200){
@@ -40,13 +43,31 @@ func(s *server) SubmitResults(ctx context.Context, req *pb.BatchPayload) (empty 
 
 	}
 	// Calculate average latency
-	var currentAverage int64 = 0
-	if s.totalRequests > 0 {
-		currentAverage = s.latency / int64(s.totalRequests)
+	var currentAverage int64 
+    if s.totalRequests > 0 {
+        currentAverage = s.latency / int64(s.totalRequests)
+    }
+
+	// Calculate P95 and P99 latencies
+	var P95Latency int64
+	var P99Latency int64
+	if (len(s.latencies)) > 0 {
+		slices.Sort(s.latencies)
+
+		P95Index := int(float64(len(s.latencies)) * 0.95)
+		P99Index := int(float64(len(s.latencies)) * 0.99)
+
+		P95Latency = s.latencies[P95Index]
+		P99Latency = s.latencies[P99Index]
 	}
 
 	// Log responses
-	fmt.Printf("Received result, total requests: %d. Succesful requests: %d. Current Average Latency: %d\n", s.totalRequests, s.succesfulRequests, currentAverage)
+	fmt.Printf("Received result, total requests: %d. Successful requests: %d. Average Latency: %dms. P95: %dms. P99: %dms\n", 
+        s.totalRequests, 
+        s.succesfulRequests, 
+        currentAverage, 
+        P95Latency, 
+        P99Latency)
 	return &emptypb.Empty{}, nil
 }
 
