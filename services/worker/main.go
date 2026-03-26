@@ -97,8 +97,8 @@ func main() {
 				Status: int32(resp.StatusCode),
 			}
 
-			// Submit the result over gRPC.
-			_, err = client.SubmitResults(context.Background(), res)
+			// Submit the result over gRPC wrapped in a BatchPayload.
+			_, err = client.SubmitResults(context.Background(), &pb.BatchPayload{Results: []*pb.Result{res}})
 			if err != nil {
 				// log.Fatalf will print the error AND force the container to crash 
 				log.Fatalf("CRITICAL: Failed to send results to Aggregator: %v", err)
