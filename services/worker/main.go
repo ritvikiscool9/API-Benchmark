@@ -97,19 +97,16 @@ func main() {
 				Status: int32(resp.StatusCode),
 			}
 
-			// Submit the result over gRPC wrapped in a BatchPayload.
-			_, err = client.SubmitResults(context.Background(), &pb.BatchPayload{Results: []*pb.Result{res}})
-			if err != nil {
-				// log.Fatalf will print the error AND force the container to crash 
-				log.Fatalf("CRITICAL: Failed to send results to Aggregator: %v", err)
-			}
+			// Send the results over a channel
+			resultsChan <- res
 
 			// If we make it past the error check, it means the network drop was successful!
 			log.Println("SUCCESS: Payload delivered to the Aggregator")
-
 		}()
 	}
 
 	// Wait for all workers to finish
 	wg.Wait()
+	close(resultsChan)
+	<-collectorDone
 }
