@@ -21,27 +21,32 @@ type server struct{
 	succesfulRequests int
 }
 
-func(s *server) SubmitResults(ctx context.Context, req *pb.Result) (empty *emptypb.Empty, err error){
+func(s *server) SubmitResults(ctx context.Context, req *pb.BatchPayload) (empty *emptypb.Empty, err error){
 	// Lock mutex to prevent race conditions
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
+	
+	// Loop over every result in the payload
+	for _, res:= range req.Results{
+		// Increment the request counter
+		s.totalRequests += 1
+		s.latency += res.GetLatency()
 
-	// Increment the request counter
-	s.totalRequests += 1
-	s.latency += req.GetLatency()
+		// Check if the request was succesful
+		if(res.GetStatus() == 200){
+			// Increase succesful requests counter
+			s.succesfulRequests += 1
+		}
 
-	// Check if the request was succesful
-	if(req.GetStatus() == 200){
-		// Increase succesful requests counter
-		s.succesfulRequests += 1
 	}
-
 	// Calculate average latency
-	currentAverage := s.latency/int64(s.totalRequests)
+	var currentAverage int64 = 0
+	if s.totalRequests > 0 {
+		currentAverage = s.latency / int64(s.totalRequests)
+	}
 
 	// Log responses
 	fmt.Printf("Received result, total requests: %d. Succesful requests: %d. Current Average Latency: %d\n", s.totalRequests, s.succesfulRequests, currentAverage)
-
 	return &emptypb.Empty{}, nil
 }
 
