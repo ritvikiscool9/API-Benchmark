@@ -14,7 +14,7 @@ spec:
     spec: 
       containers: 
         - name: aggregator 
-          image: aggregator-service:latest
+          image: ritvikuppal/aggregator-service:latest
           imagePullPolicy: Never 
           ports:
             - containerPort: 50051
