@@ -1,72 +1,50 @@
 # Distributed Load Tester & API Benchmarker
 
-A containerized load testing tool written in Go, orchestrated with Kubernetes. It is designed to measure API latency and aggregate results across a distributed network using gRPC.
+A high-performance, containerized load-testing suite written in Go and orchestrated with Kubernetes. This system benchmarks API reliability by distributing concurrent load generation across worker nodes and aggregating real-time telemetry via gRPC into a stateful persistence layer.
 
 ![Go](https://img.shields.io/badge/go-%2300ADD8.svg?style=for-the-badge&logo=go&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![gRPC](https://img.shields.io/badge/gRPC-%23244c5a.svg?style=for-the-badge&logo=grpc&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
 
-## Current Capabilities
+## Core Capabilities
 
-Currently, the application acts as the foundational infrastructure for a distributed testing system. 
-
-* **Containerized Load Generation:** Executes batches of HTTP requests against a target API from an isolated Alpine Linux environment.
-* **gRPC Telemetry:** Transmits test results (total requests, success rates, latency) across the Kubernetes network using a custom Protobuf contract.
-* **Centralized Aggregation:** A dedicated server listens for incoming payloads from worker nodes and calculates the average latency of the benchmark run.
+*   **Massive Concurrency:** Leverages Go’s **Goroutines and channels** to execute thousands of simultaneous HTTP requests while maintaining strict memory safety.
+*   **High-Fidelity Observability:** Calculates exact **P95 and P99 latency percentiles** using Mutex-protected data structures to provide deep insights into system tail latency.
+*   **Low-Latency Telemetry:** Utilizes a custom **gRPC networking contract** for type-safe, high-speed data transmission between workers and the central aggregator.
+*   **Stateful Storage:** Persists every benchmark run and aggregated metric into a **PostgreSQL** database for historical analysis and trend reporting.
 
 ## Architecture
 
-The system is currently composed of two main microservices:
+The system follows a distributed producer-consumer model orchestrated by Kubernetes:
 
-1. **The Worker Node Service (The Muscle):** A lightweight Go container deployed as a Kubernetes `Job`. It wakes up, executes a batch of HTTP requests against a target URL, and sends the performance payload to the Aggregator over gRPC before shutting down.
-2. **The Aggregator Service:** A Go server deployed as a Kubernetes `Deployment`. It runs continuously, listening on port 50051 for incoming gRPC connections from Worker pods. It receives the batched data streams, calculates the current average latency, and logs the metrics to standard output.
+1.  **Worker Nodes (Go):** Deployed as Kubernetes `Jobs`. These containers orchestrate load generation, calculate local performance metrics, and stream payloads to the aggregator.
+2.  **Central Aggregator (Go):** A Kubernetes `Deployment` acting as the gRPC server. It consumes telemetry streams, performs final statistical aggregation, and manages the database transaction layer.
+3.  **Persistence Layer (PostgreSQL):** A stateful storage service ensuring all benchmark data survives container restarts and cluster updates.
 
 ## Tech Stack
 
-* **Language:** Go (Golang)
-* **Communication:** gRPC / Protocol Buffers
-* **Containerization:** Docker (Multi-stage builds)
-* **Orchestration:** Kubernetes (Deployments, Services, Jobs)
+*   **Language:** Go (Golang)
+*   **Protocols:** gRPC, Protocol Buffers (Protobuf)
+*   **Containerization:** Docker (Multi-stage Alpine builds)
+*   **Orchestration:** Kubernetes (Deployments, StatefulSets, Jobs)
+*   **Database:** PostgreSQL
 
-## Quick Start (Local Kubernetes Cluster)
+## Quick Start (Local Development)
 
-Prerequisites:
-* Docker Desktop (with Kubernetes enabled)
-* `kubectl` CLI configured
-
-### 1. Start the Aggregator (The Brain)
-Deploy the central server that will listen for incoming metrics:
+Execute the following commands to initialize the environment, build the engine, and launch a benchmark:
 ```bash
+# 1. Initialize the Environment (Database & Aggregator)
+kubectl apply -f postgres.yaml
 kubectl apply -f aggregator.yaml
-```
-Verify the Aggregator is running and its network service is active:
-```bash
-kubectl logs deployment/aggregator-deployment
-```
 
-### 2. Build the Worker (The Muscle)
-Compile the Go load-testing engine into an Alpine Linux Docker container:
-```bash
+# 2. Build the Worker Engine
 docker build -t worker-service -f services/worker/Dockerfile.worker .
-```
 
-### 3. Launch the Load Test
-Deploy the Kubernetes Job to spin up the Worker pod, execute the requests, and transmit the payload:
-```bash
-# Ensure any previous completed jobs are cleared
+# 3. Launch a Benchmark Run (Clean previous jobs first)
 kubectl delete job worker-job --ignore-not-found=true
-
-# Deploy the new benchmark job
 kubectl apply -f worker.yaml
-```
 
-### 4. View the Results
-Check the Worker logs to verify the HTTP requests were successfully executed:
-```bash
-kubectl logs job/worker-job
-```
-Check the Aggregator's logs to see the incoming gRPC payloads and latency averages:
-```bash
+# 4. Analyze Results (View P95/P99 metrics and DB insertions)
 kubectl logs deployment/aggregator-deployment
-```
