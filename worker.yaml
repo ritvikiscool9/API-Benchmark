@@ -7,10 +7,11 @@ spec:
     spec: 
       containers: 
         - name: worker 
-          image: ritvikuppal/worker-service:latest
+          image: worker-service:latest
           imagePullPolicy: Never
-          args: 
-            - "-requests=50"
-            - "-url=https://httpbin.org/get"
-            - "-aggregator=aggregator-service:50051"
+          env:
+          - name: TARGET_URL
+            value: "TARGET_URL_PLACEHOLDER"
+          - name: REQUEST_COUNT
+            value: "REQUEST_COUNT_PLACEHOLDER"
       restartPolicy: Never

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"sync"
 	"time"
 
@@ -16,19 +18,22 @@ import (
 )
 
 func main() {
-	// Flags to take in user input for target URL and amount of requests 
-	urlPtr := flag.String("url", "https://httpbin.org/get", "URL to test")
-	totalRequestsPtr := flag.Int("requests", 10, "number of requests to make")
-	aggregator := flag.String("aggregator","locahost:50051", "target server address")
-
-	flag.Parse()
-
-	if *totalRequestsPtr <= 0 {
-		fmt.Printf("Request amount must be greater than 0, defaulting to 10\n")
-		*totalRequestsPtr = 10
+	// Get the URL from ENV
+	targetURL := os.Getenv("TARGET_URL")
+	if targetURL == "" {
+		targetURL = "https://httpbin.org/get"
 	}
 
-	fmt.Printf("Starting benchmark on %s with %d requests...\n", *urlPtr, *totalRequestsPtr)
+	// Get the request count from Env
+	totalRequestsPtr := os.Getenv("REQUEST_COUNT")
+	count, err := strconv.Atoi(totalRequestsPtr)
+	if err != nil {
+		count = 100
+	}
+
+	aggregator := flag.String("aggregator","aggregator-service:50051", "target server address")
+	flag.Parse()
+	fmt.Printf("Starting benchmark on %s with %d requests...\n", targetURL, count)
 
 	// Create grpc server
 	conn, err := grpc.NewClient(*aggregator,grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -44,13 +49,13 @@ func main() {
 	var wg sync.WaitGroup
 
 	// Channel for all goroutines to send their HTTP results
-	resultsChan := make(chan *pb.Result, *totalRequestsPtr)
+	resultsChan := make(chan *pb.Result, count)
 
 	// Channel that tells main when it is finished
 	collectorDone := make(chan bool)
 
 	go func(){
-		batch := make([]*pb.Result, 0, *totalRequestsPtr)
+		batch := make([]*pb.Result, 0, count)
 		
 		// Loop that blocks and catches data until resultsChan is closed
 		for res := range resultsChan{
@@ -67,7 +72,7 @@ func main() {
     	collectorDone <- true
 	}()
 
-	for i := 0; i < *totalRequestsPtr; i++ {
+	for i := 0; i < count; i++ {
 		// Register one pending goroutine so Wait can block until all requests finish
 		wg.Add(1)
 
@@ -78,7 +83,7 @@ func main() {
 			startTime := time.Now()
 			
 			// Send the HTTP request to the target URL
-			resp, err := http.Get(*urlPtr)
+			resp, err := http.Get(targetURL)
 			
 			if err != nil {
 				fmt.Printf("Error: %s\n", err)
