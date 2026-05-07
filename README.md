@@ -46,7 +46,7 @@ docker build -t worker-service -f services/worker/Dockerfile.worker .
 # 3. Execute Dynamic Benchmark Run via Automation Script
 # The script templates worker.yaml with your URL and Request Count
 # Usage: .\stress.ps1 -url "<TARGET_URL>" -count <NUMBER_OF_REQUESTS>
-.\stress.ps1 -url "[http://www.google.com](http://www.google.com)" -count 100
+powershell.exe -File .\stress.ps1 -url "http://www.google.com" -count 100
 
 # 4. Analysis (View P95/P99 metrics and DB insertions)
 kubectl logs deployment/aggregator-deployment
